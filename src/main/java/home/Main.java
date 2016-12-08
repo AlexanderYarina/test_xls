@@ -29,7 +29,7 @@ public class Main extends Application {
         primaryStage.setTitle("Test task");
         rootLayout = initAndShowRootLayout(primaryStage, "/view/root.fxml");
         AnchorPane body = initAndShowNestedBody(rootLayout, "/view/body.fxml");
-        formStage = modalWindow(primaryStage, "/view/editTblColName.fxml", "Редактирование поля таблицы");
+        formStage = modalWindow(primaryStage, "/view/saveColumnName.fxml", "Редактирование поля таблицы");
         messStage = modalWindow(primaryStage, "/view/message.fxml", "");
     }
 
