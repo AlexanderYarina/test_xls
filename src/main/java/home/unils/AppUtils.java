@@ -97,33 +97,36 @@ public class AppUtils {
     }
 
     private static File createCsv(File xlsFile, Map<Integer, String> columnMap) {
-        File result;
+        File result = null;
         try {
-            result = File.createTempFile("temp", ".csv");
+            result = File.createTempFile("tmp", ".csv");
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
-        try (InputStream in = new FileInputStream(xlsFile);
-             HSSFWorkbook wb = new HSSFWorkbook(in);
-             BufferedWriter out = new BufferedWriter(new FileWriter(result))) {
-
+        try (
+                InputStream in = new FileInputStream(xlsFile);
+                HSSFWorkbook wb = new HSSFWorkbook(in);
+                BufferedWriter out = new BufferedWriter(new FileWriter(result));
+        ) {
             Row row = detectFirstRowWithData(wb);
-            StringBuilder rowForWrite = new StringBuilder();
 
+            StringBuilder rowForWrite = new StringBuilder();
             for (Map.Entry<Integer, String> entry : columnMap.entrySet()) {
                 if (!rowForWrite.toString().equals("")) {
                     rowForWrite.append(',');
                 }
                 String origFldName = entry.getValue();
                 String newFldName = "";
-                for (ColumnsModel correspondence : AppDb.columnsModelTable) {
-                    if (correspondence.getColumnInFile().equals(origFldName)) {
-                        newFldName = correspondence.getColumnInDataTable().get();
+                boolean resColumn = false;
+                for (ColumnsModel columnsModel : AppDb.columnsModelTable) {
+                    if (columnsModel.getColumnInFile().get().equals(origFldName)) {
+                        newFldName = columnsModel.getColumnInDataTable().get();
+                        resColumn = true;
                         break;
                     }
                 }
-                rowForWrite.append('"').append(newFldName).append('"');
+                rowForWrite.append('"' + newFldName + '"');
             }
             out.write(rowForWrite.toString());
             out.newLine();
@@ -144,7 +147,20 @@ public class AppUtils {
                         rowForWrite.append("");
                         continue;
                     }
-                    rowForWrite.append('"').append(cell.getStringCellValue()).append('"');
+                    switch (cell.getCellType()) {
+                        case Cell.CELL_TYPE_STRING: {
+                            rowForWrite.append('"').append(cell.getStringCellValue()).append('"');
+                            break;
+                        }
+                        case Cell.CELL_TYPE_NUMERIC: {
+                            rowForWrite.append(cell.getNumericCellValue());
+                            break;
+                        }
+                        case Cell.CELL_TYPE_BOOLEAN: {
+                            rowForWrite.append('"').append(cell.getBooleanCellValue()).append('"');
+                            break;
+                        }
+                    }
                 }
                 out.write(rowForWrite.toString());
                 out.newLine();
@@ -152,6 +168,7 @@ public class AppUtils {
             out.flush();
         } catch (IOException e) {
             e.printStackTrace();
+            result = null;
         }
         return result;
     }
